@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -24,6 +25,7 @@ type Bot struct {
 
 func (b *Bot) RegisterHandlers() {
 	b.client.AddEventHandler(b.pingHandler)
+	b.client.AddEventHandler(b.geminiHandler)
 }
 
 func (b *Bot) Start() error {
@@ -64,11 +66,7 @@ func (b *Bot) pingHandler(evt interface{}) {
 	startTime := time.Now()
 	switch v := evt.(type) {
 	case *events.Message:
-		msg := v.Message.GetConversation()
-		// if the message is empty it means that the message is an extended text message
-		if msg == "" {
-			msg = *v.Message.GetExtendedTextMessage().Text
-		}
+		msg := extractMessage(v)
 
 		if msg == "ping" {
 			fmt.Println("Sending pong")
@@ -86,23 +84,51 @@ func (b *Bot) pingHandler(evt interface{}) {
 				log.Debug().Msgf("Sent message %+v", message)
 			}
 		}
-
-		//msg := *v.Message.GetExtendedTextMessage().Text
-		//if msg == "ping" {
-		//	fmt.Println("Sending pong")
-		//	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		//	defer cancel()
-		//	fmt.Println(v.Info.Sender.Device)
-		//	message, err := b.client.SendMessage(ctx, v.Info.Sender, &waProto.Message{
-		//		ExtendedTextMessage: &waProto.ExtendedTextMessage{
-		//			Text: proto.String("pong"),
-		//		},
-		//	})
-		//	if err != nil {
-		//		log.Error().Err(err).Msg("Failed to send message")
-		//	} else {
-		//		log.Debug().Msgf("Sent message %+v", message)
-		//	}
-		//}
 	}
+}
+
+func (b *Bot) geminiHandler(env interface{}) {
+	switch v := env.(type) {
+	case *events.Message:
+		msg := extractMessage(v)
+
+		fmt.Println("Received message: ", msg)
+
+		if strings.HasPrefix(msg, "AI, ") {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+			v.Info.Sender.Device = 0
+
+			// fetch answer from gemini
+			geminiAnswer, err := fetchGeminiResponse(strings.TrimPrefix(msg, "AI, "))
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to fetch response from gemini")
+				geminiAnswer = "Maaf, saya tidak bisa membantu Anda saat ini."
+			}
+			if geminiAnswer == "" {
+				geminiAnswer = "Maaf, saya tidak bisa membantu Anda saat ini."
+			}
+
+			message, err := b.client.SendMessage(ctx, v.Info.Sender, &waProto.Message{
+				ExtendedTextMessage: &waProto.ExtendedTextMessage{
+					Text: proto.String(geminiAnswer),
+				},
+			})
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to send message")
+			} else {
+				log.Debug().Msgf("Sent message %+v", message)
+			}
+		}
+	}
+}
+
+// extractMessage is used to handle if the message is a conversation or an extended text message
+func extractMessage(v *events.Message) string {
+	msg := v.Message.GetConversation()
+	// if the message is empty it means that the message is an extended text message
+	if msg == "" {
+		msg = v.Message.GetExtendedTextMessage().GetText()
+	}
+	return msg
 }
