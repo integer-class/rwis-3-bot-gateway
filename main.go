@@ -22,13 +22,15 @@ func App() *cli.App {
 					dbLog := waLog.Stdout("Database", "DEBUG", true)
 					container, err := sqlstore.New("sqlite3", "file:store.db?_foreign_keys=on", dbLog)
 					if err != nil {
-						panic(err)
+						log.Fatal().Err(err).Msg("Failed to create db store container")
 					}
+
 					// If you want multiple sessions, remember their JIDs and use .GetDevice(jid) or .GetAllDevices() instead.
 					deviceStore, err := container.GetFirstDevice()
 					if err != nil {
 						log.Fatal().Err(err).Msg("Failed to get device")
 					}
+
 					clientLog := waLog.Stdout("Client", "DEBUG", true)
 					bot := &Bot{
 						client: whatsmeow.NewClient(deviceStore, clientLog),
