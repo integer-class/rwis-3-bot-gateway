@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/allegro/bigcache"
 	"os"
 	"os/signal"
 	"strconv"
@@ -21,6 +22,7 @@ import (
 
 type Bot struct {
 	client *whatsmeow.Client
+	cache  *bigcache.BigCache
 }
 
 func (b *Bot) RegisterHandlers() {
@@ -99,8 +101,14 @@ func (b *Bot) geminiHandler(env interface{}) {
 			defer cancel()
 			v.Info.Sender.Device = 0
 
+			// get previous chat contexts from cache
+			chatContext, err := getChatContext(b.cache, v.Info.Sender)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to get chat context")
+			}
+
 			// fetch answer from gemini
-			geminiAnswer, err := fetchGeminiResponse(strings.TrimPrefix(msg, "AI, "))
+			geminiAnswer, err := fetchGeminiResponse(strings.TrimPrefix(msg, "AI, "), chatContext.Items)
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to fetch response from gemini")
 				geminiAnswer = "Maaf, saya tidak bisa membantu Anda saat ini."
@@ -118,6 +126,18 @@ func (b *Bot) geminiHandler(env interface{}) {
 				log.Error().Err(err).Msg("Failed to send message")
 			} else {
 				log.Debug().Msgf("Sent message %+v", message)
+			}
+
+			// store to chat context unique to each user
+			err = storeChatContext(b.cache, ChatContext{
+				SenderId: v.Info.Sender,
+				Items: []Content{
+					{Role: "user", Parts: []Part{{Text: msg}}},
+					{Role: "model", Parts: []Part{{Text: geminiAnswer}}},
+				},
+			})
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to store chat context")
 			}
 		}
 	}

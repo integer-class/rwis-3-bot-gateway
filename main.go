@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/gob"
+	"github.com/allegro/bigcache"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -20,6 +22,23 @@ func App() *cli.App {
 			{
 				Name: "start",
 				Action: func(c *cli.Context) error {
+					// register ContextItem for gob
+					gob.Register(Content{})
+
+					bigCacheConfig := bigcache.Config{
+						Shards:             1024,
+						MaxEntriesInWindow: 1000 * 10 * 60,
+						MaxEntrySize:       500,
+						Verbose:            true,
+						HardMaxCacheSize:   1024,
+						OnRemove:           nil,
+						OnRemoveWithReason: nil,
+					}
+					cache, err := bigcache.NewBigCache(bigCacheConfig)
+					if err != nil {
+						log.Fatal().Err(err).Msg("Failed to create cache")
+					}
+
 					dbLog := waLog.Stdout("Database", "DEBUG", true)
 					container, err := sqlstore.New("sqlite3", "file:store.db?_foreign_keys=on", dbLog)
 					if err != nil {
@@ -35,6 +54,7 @@ func App() *cli.App {
 					clientLog := waLog.Stdout("Client", "DEBUG", true)
 					bot := &Bot{
 						client: whatsmeow.NewClient(deviceStore, clientLog),
+						cache:  cache,
 					}
 					bot.RegisterHandlers()
 

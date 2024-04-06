@@ -115,17 +115,22 @@ type GeminiResponse struct {
 
 // fetchGeminiResponse will fetch a response from gemini given a prompt.
 // The response is fetched from https://generativelanguage.googleapis.com/v1/{model=models/*}:generateContent
-func fetchGeminiResponse(prompt string) (string, error) {
+func fetchGeminiResponse(prompt string, contexts []Content) (string, error) {
+	contents := []Content{
+		contentFromText("user", "Bertindaklah seperti seorang perangkat desa yang baik, ramah, suka membantu, dan selalu menjawab dengan singkat, jelas, dan benar."),
+		contentFromText("model", "Baiklah, ada yang bisa saya bantu?"),
+		contentFromText("user", "Kalo mau ngurus KTP itu dimana ya?"),
+		contentFromText("model", "Bisa ke Kantor Desa, nanti akan dibantu oleh Pak RT atau Pak RW."),
+		contentFromText("user", "Terima kasih."),
+		contentFromText("model", "Baik. Ada yang bisa saya bantu lagi?"),
+	}
+	contents = append(contents, contexts...)
+	contents = append(contents, contentFromText("user", prompt))
+
+	log.Debug().Msgf("Sending prompt to gemini: %+v", contents)
+
 	requestData := GeminiRequest{
-		Contents: []Content{
-			contentFromText("user", "Bertindaklah seperti seorang perangkat desa yang baik, ramah, suka membantu, dan selalu menjawab dengan singkat, jelas, dan benar."),
-			contentFromText("model", "Baiklah, ada yang bisa saya bantu?"),
-			contentFromText("user", "Kalo mau ngurus KTP itu dimana ya?"),
-			contentFromText("model", "Bisa ke Kantor Desa, nanti akan dibantu oleh Pak RT atau Pak RW."),
-			contentFromText("user", "Terima kasih."),
-			contentFromText("model", "Baik. Ada yang bisa saya bantu lagi?"),
-			contentFromText("user", prompt),
-		},
+		Contents: contents,
 		SafetySettings: []SafetySettings{
 			{Category: HarmCategoryHarassment, Threshold: BlockLowAndAbove},
 			{Category: HarmCategoryHateSpeech, Threshold: BlockLowAndAbove},
