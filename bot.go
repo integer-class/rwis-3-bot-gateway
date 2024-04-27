@@ -130,6 +130,22 @@ func (b *Bot) handleGeminiEvent(msg string, evt *events.Message) {
 func (b *Bot) messageHandler(evt interface{}) {
 	switch v := evt.(type) {
 	case *events.Message:
+		// ignore if it's from a group
+		if v.Info.IsGroup {
+			return
+		}
+
+		// whitelist the sender
+		senderNumber := strings.Split(v.Info.Sender.String(), "@")[0]
+		// if it's coming from whatsapp web, the number will be different, it will have a trailing code separated
+		// by a colon, so we need to split it again
+		senderNumber = strings.Split(senderNumber, ":")[0]
+
+		// if the sender is not whitelisted, ignore the message
+		if senderNumber != "" {
+			return
+		}
+
 		msg := extractMessage(v)
 		if msg == "ping" {
 			b.handlePingEvent(v)
