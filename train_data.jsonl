@@ -1,0 +1,176 @@
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"Kalo mau ngurus KTP itu dimana ya?\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"chat\", \"value\": \"Bisa ke Kantor Desa, nanti akan dibantu oleh Pak RT atau Pak RW.\" }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"Kalo mau ngurus KTP itu dimana ya?\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"chat\", \"value\": \"Bisa ke Kantor Desa, nanti akan dibantu oleh Pak RT atau Pak RW.\" }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\" : \"Cek data pribadi saya berdasarkan nomor telepon saya.\" } ",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"personal_data_request\", \"value\": \"089123456789\" }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"Saya siapa?\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"personal_data_request\", \"value\": \"089123456789\" }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"RW sekarang siapa?\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"rw_data_request\" }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"Iuran saya tahun ini kurang berapa?\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"fund_data_request\", \"type\": \"personal\", \"value\": \"089123456789\" }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"Jalanan di gang depan rusak, mobil jadi susah lewat\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"issue_report\", \"value\": \"Masalah telah berhasil dilaporkan kepada admin.\", \"meta\": { \"title\": \"Jalan Rusak\", \"description\": \"Kerusakan jalan di depan gang mengakibatkan susahnya akses menggunakan mobil\" } }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"Ada berapa UMKM di RW sini?\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"umkm_data_request\" }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"Alamat rumah RT 3 ada dimana?\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"rt_data_request\", \"name\": \"RT 3\", \"fields\": [\"address\"] }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"Alamat rumah RW ada dimana?\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"rw_data_request\", \"name\": \"RW 11\", \"fields\": [\"address\"] }"
+    }
+  ]
+}
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Wisnu adalah bot yang akan membantu warga dalam mendapatkan informasi seputar RW, melaporkan masalah, dan memberikan layanan lainnya."
+    },
+    {
+      "role": "user",
+      "content": "{ \"sender\": \"089123456789\", \"chat\": \"Berapa jumlah iuran yang perlu dibayarkan tiap bulan?\" }",
+    },
+    {
+      "role": "assistant",
+      "content": "{ \"type\": \"fund_data_request\", \"type\": \"general\", \"fields\": [\"amount\"] }"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/allegro/bigcache"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
 	"os/signal"
 	"strconv"
@@ -23,6 +24,7 @@ import (
 type Bot struct {
 	client *whatsmeow.Client
 	cache  *bigcache.BigCache
+	db     *pgxpool.Pool
 }
 
 func (b *Bot) RegisterHandlers() {
@@ -82,7 +84,7 @@ func (b *Bot) handlePingEvent(evt *events.Message) {
 	}
 }
 
-func (b *Bot) handleGeminiEvent(msg string, evt *events.Message) {
+func (b *Bot) handleGeminiEvent(sender string, msg string, evt *events.Message) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	evt.Info.Sender.Device = 0
@@ -94,7 +96,8 @@ func (b *Bot) handleGeminiEvent(msg string, evt *events.Message) {
 	}
 
 	// fetch answer from gemini
-	geminiAnswer, err := fetchGeminiResponse(strings.TrimPrefix(msg, "AI, "), chatContext.Items)
+	question := fmt.Sprintf(`{ "sender": "%s", "chat": "%s" }`, evt.Info.Sender, msg)
+	geminiAnswer, err := fetchGeminiResponse(question, chatContext.Items)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to fetch response from gemini")
 		geminiAnswer = "Maaf, saya tidak bisa membantu Anda saat ini."
@@ -103,9 +106,41 @@ func (b *Bot) handleGeminiEvent(msg string, evt *events.Message) {
 		geminiAnswer = "Maaf, saya tidak bisa membantu Anda saat ini."
 	}
 
+	// try parsing the answer to see if it's a command
+	var reply string
+	err, output := parseGeminiAnswer(geminiAnswer)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to parse gemini answer. Falling back to default message.")
+		reply = geminiAnswer
+	} else {
+		// handle different type of output accordingly
+		switch output["type"] {
+		case "personal_data_request":
+			log.Debug().Msgf("Handling personal data request from %s", sender)
+			err, reply = handlePersonalDataRequest(ctx, b.db, sender)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to handle personal data request")
+				return
+			}
+		case "issue_report":
+			log.Debug().Msgf("Handling issue report from %s", sender)
+			meta := output["meta"].(map[string]interface{})
+			err, reply = handleIssueReport(ctx, b.db, sender, meta["title"].(string), meta["description"].(string))
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to handle issue report")
+				return
+			}
+		case "chat":
+			reply = output["value"].(string)
+		default:
+			reply = "Maaf, saya tidak bisa membantu Anda saat ini."
+		}
+	}
+
+	log.Debug().Msgf("Sending reply to %s: %s", sender, reply)
 	message, err := b.client.SendMessage(ctx, evt.Info.Sender, &waProto.Message{
 		ExtendedTextMessage: &waProto.ExtendedTextMessage{
-			Text: proto.String(geminiAnswer),
+			Text: proto.String(reply),
 		},
 	})
 	if err != nil {
@@ -141,18 +176,13 @@ func (b *Bot) messageHandler(evt interface{}) {
 		// by a colon, so we need to split it again
 		senderNumber = strings.Split(senderNumber, ":")[0]
 
-		// if the sender is not whitelisted, ignore the message
-		if senderNumber != "" {
-			return
-		}
-
 		msg := extractMessage(v)
 		if msg == "ping" {
 			b.handlePingEvent(v)
 			return
 		}
 		// handle the rest of the messages using gemini
-		b.handleGeminiEvent(msg, v)
+		b.handleGeminiEvent(senderNumber, msg, v)
 		break
 	}
 }

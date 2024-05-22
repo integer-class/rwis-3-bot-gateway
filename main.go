@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/gob"
+	"fmt"
 	"github.com/allegro/bigcache"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
@@ -51,10 +55,25 @@ func App() *cli.App {
 						log.Fatal().Err(err).Msg("Failed to get device")
 					}
 
+					ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					defer cancel()
+
+					dbUrl := os.Getenv("DATABASE_URL")
+					if dbUrl == "" {
+						log.Fatal().Msg("DATABASE_URL is not set")
+					}
+
+					conn, err := pgxpool.New(ctxWithTimeout, dbUrl)
+					if err != nil {
+						log.Fatal().Err(err).Msg(fmt.Sprintf("Unable to connect to database: %v\n", err))
+					}
+					defer conn.Close()
+
 					clientLog := waLog.Stdout("Client", "DEBUG", true)
 					bot := &Bot{
 						client: whatsmeow.NewClient(deviceStore, clientLog),
 						cache:  cache,
+						db:     conn,
 					}
 					bot.RegisterHandlers()
 

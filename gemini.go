@@ -3,12 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
 	"os"
-
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 )
 
 const BaseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
@@ -117,12 +116,24 @@ type GeminiResponse struct {
 // The response is fetched from https://generativelanguage.googleapis.com/v1/{model=models/*}:generateContent
 func fetchGeminiResponse(prompt string, contexts []Content) (string, error) {
 	contents := []Content{
-		contentFromText("user", "Bertindaklah seperti seorang perangkat desa yang baik, ramah, suka membantu, dan selalu menjawab dengan singkat, jelas, dan benar."),
-		contentFromText("model", "Baiklah, ada yang bisa saya bantu?"),
-		contentFromText("user", "Kalo mau ngurus KTP itu dimana ya?"),
-		contentFromText("model", "Bisa ke Kantor Desa, nanti akan dibantu oleh Pak RT atau Pak RW."),
-		contentFromText("user", "Terima kasih."),
-		contentFromText("model", "Baik. Ada yang bisa saya bantu lagi?"),
+		contentFromText("user", `Output Types and Schemas. Always output in this schema, never reply in plain text format. use only json.
+Use this schema for all output types.
+		
+1. Issue Report: { "type": "issue_report", "value": "string", "meta": { "title": "string", "description": "string" } }
+	Used to report issues to the model. Extract the title and description from user given text.
+2. Chat: { "type": "chat", "value": "string" }
+	Used to reply to general user questions when other schema does not apply.
+3. Personal Data Request: { "type": "personal_data_request", "value": "string" }
+	Used to reply to personal data requests. Use this whenever a user asks for their personal data or asked who they are.
+4. RW Data Request: { "type": "rw_data_request" }
+	Used to reply to RW data requests. Use this whenever a user asks for RW data.
+5. Fund Data Request (Personal): { "type": "fund_data_request", "value": "string" }
+	Use this whenever a user asks for their fund data. The other name for this is "iuran".
+7. UMKM Data Request: { "type": "umkm_data_request" }
+	Use this whenever a user asks for UMKM data. For example how many umkm in the area, etc.
+10. Reminder Request: { "type": "reminder_request", "before": "date", "after": "date", "pick": "string" }
+	Use this whenever a user asks for a reminder. The before and after date is the date of the reminder. The pick is either how many, or top, or last.`),
+		contentFromText("model", "{ \"type\": \"chat\", \"value\": \"Tentu saja, apa yang bisa saya bantu hari ini?\" }"),
 	}
 	contents = append(contents, contexts...)
 	contents = append(contents, contentFromText("user", prompt))
@@ -147,12 +158,16 @@ func fetchGeminiResponse(prompt string, contexts []Content) (string, error) {
 		return "", errors.Wrap(err, "failed to marshal json body")
 	}
 
+	log.Debug().Msgf("Sending request to gemini: %s", jsonBody)
+
 	request, err := http.NewRequest("POST", BaseUrl+"?key="+os.Getenv("GEMINI_API_KEY"), bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return "", errors.Wrap(err, "failed to construct request to gemini")
 	}
 	request.Header.Add("Accept", "application/json")
 	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Authorization", "Bearer "+os.Getenv("GEMINI_API_TOKEN"))
+	request.Header.Add("X-Goog-User-Project", os.Getenv("GEMINI_PROJECT_ID"))
 
 	client := &http.Client{}
 	response, err := client.Do(request)
