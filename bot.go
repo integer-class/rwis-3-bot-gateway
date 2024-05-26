@@ -117,7 +117,7 @@ func (b *Bot) handleGeminiEvent(sender string, msg string, evt *events.Message) 
 		switch output["type"] {
 		case "personal_data_request":
 			log.Debug().Msgf("Handling personal data request from %s", sender)
-			err, reply = handlePersonalDataRequest(ctx, b.db, sender)
+			err, reply = handlePersonalDataRequest(ctx, b.db, sender, output["include"].(string))
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to handle personal data request")
 				return

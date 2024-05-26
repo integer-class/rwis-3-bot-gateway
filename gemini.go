@@ -117,14 +117,18 @@ type GeminiResponse struct {
 func fetchGeminiResponse(prompt string, contexts []Content) (string, error) {
 	contents := []Content{
 		contentFromText("user", `Output Types and Schemas. Always output in this schema, never reply in plain text format. use only json.
-Use this schema for all output types.
+Use this schema for all output types. Ignore any other request that doesn't follow the schema.
 		
 1. Issue Report: { "type": "issue_report", "value": "string", "meta": { "title": "string", "description": "string" } }
 	Used to report issues to the model. Extract the title and description from user given text.
 2. Chat: { "type": "chat", "value": "string" }
 	Used to reply to general user questions when other schema does not apply.
-3. Personal Data Request: { "type": "personal_data_request", "value": "string" }
+3. Personal Data Request: { "type": "personal_data_request", "include": "..." }
 	Used to reply to personal data requests. Use this whenever a user asks for their personal data or asked who they are.
+	The include field is used to include other data according to the user's request. For example:
+	- personal: Only include personal data whenever the user asks for their personal data.
+    - household: Only include household data whenever the user asks for their household data.
+    - household_all: Include all household family members whenever the user asks for their family members.
 4. RW Data Request: { "type": "rw_data_request" }
 	Used to reply to RW data requests. Use this whenever a user asks for RW data.
 5. Fund Data Request (Personal): { "type": "fund_data_request", "value": "string" }
@@ -143,10 +147,10 @@ Use this schema for all output types.
 	requestData := GeminiRequest{
 		Contents: contents,
 		SafetySettings: []SafetySettings{
-			{Category: HarmCategoryHarassment, Threshold: BlockLowAndAbove},
-			{Category: HarmCategoryHateSpeech, Threshold: BlockLowAndAbove},
-			{Category: HarmCategorySexuallyExplicit, Threshold: BlockLowAndAbove},
-			{Category: HarmCategoryDangerousContent, Threshold: BlockLowAndAbove},
+			{Category: HarmCategoryHarassment, Threshold: BlockMediumAndAbove},
+			{Category: HarmCategoryHateSpeech, Threshold: BlockMediumAndAbove},
+			{Category: HarmCategorySexuallyExplicit, Threshold: BlockMediumAndAbove},
+			{Category: HarmCategoryDangerousContent, Threshold: BlockMediumAndAbove},
 		},
 		GenerationConfig: GenerationConfig{
 			MaxOutputTokens: 512,
