@@ -236,7 +236,7 @@ WHERE household_id IN (SELECT household_id
 	return errors.New("invalid include type"), ""
 }
 
-func handleIssueReport(ctx context.Context, db *pgxpool.Pool, sender string, title string, description string) (error, string) {
+func handleIssueReport(ctx context.Context, db *pgxpool.Pool, sender string, reply string, title string, description string) (error, string) {
 	log.Debug().Msgf("Handling issue report from %s", sender)
 	trx, err := db.Begin(ctx)
 	if err != nil {
@@ -261,8 +261,8 @@ WHERE whatsapp_number = $1`, sender)
 	}
 
 	// handle issue report
-	_, err = trx.Exec(ctx, `INSERT INTO issue_report (resident_id, title, description, status)
-VALUES ($1, $2, $3, $4)`, residentId, title, description, "todo")
+	_, err = trx.Exec(ctx, `INSERT INTO issue_report (resident_id, title, description, status, approval_status)
+VALUES ($1, $2, $3, $4, $5)`, residentId, title, description, "To do", "Pending")
 
 	if err != nil {
 		return errors.Wrap(err, "failed to insert issue report"), ""
@@ -273,5 +273,9 @@ VALUES ($1, $2, $3, $4)`, residentId, title, description, "todo")
 		return errors.Wrap(err, "failed to commit issue report transaction"), ""
 	}
 
-	return nil, "Terima kasih atas laporan Anda. Kami akan segera menindaklanjuti."
+	if reply == "" {
+		reply = "Terima kasih atas laporan Anda. Kami akan segera menindaklanjuti."
+	}
+
+	return nil, reply
 }

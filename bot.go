@@ -125,7 +125,7 @@ func (b *Bot) handleGeminiEvent(sender string, msg string, evt *events.Message) 
 		case "issue_report":
 			log.Debug().Msgf("Handling issue report from %s", sender)
 			meta := output["meta"].(map[string]interface{})
-			err, reply = handleIssueReport(ctx, b.db, sender, meta["title"].(string), meta["description"].(string))
+			err, reply = handleIssueReport(ctx, b.db, sender, output["value"].(string), meta["title"].(string), meta["description"].(string))
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to handle issue report")
 				return
