@@ -7,6 +7,8 @@ import (
 	"github.com/allegro/bigcache"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -77,9 +79,27 @@ func App() *cli.App {
 					}
 					bot.RegisterHandlers()
 
-					if err := bot.Start(); err != nil {
-						log.Fatal().Err(err).Msg("Failed to start bot")
+					server := &Server{
+						bot: bot,
 					}
+
+					var signalChan = make(chan os.Signal, 1)
+					signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+					go func() {
+						if err := bot.Start(); err != nil {
+							log.Fatal().Err(err).Msg("Failed to start bot")
+						}
+					}()
+
+					go func() {
+						fmt.Println("Server started")
+						if err := server.Start(); err != nil {
+							log.Fatal().Err(err).Msg("Failed to start server")
+						}
+					}()
+
+					<-signalChan
 
 					return nil
 				},
